@@ -2,9 +2,22 @@
         Utitlities
 ****************************/
 
-//----------------- Functions -----------------//
+//-------------------------------------------//
+//---------------- Functions ----------------//
+//-------------------------------------------//
 
-// Map returns a value, maped from an input range onto a target range
+/**
+ * Map returns a value, maped from an input range onto a target range
+ * @method  map
+ * @param   {Number}    value   The value to map
+ * @param   {Number}    start1  Start of the input range
+ * @param   {Number}    stop1   End of the input range
+ * @param   {Number}    start2  Start of the target range
+ * @param   {Number}    stop2   End of the target range
+ * @returns {Number}            The maped value
+ * @example
+ *  console.log(map(0.5, 0, 1, 0, 100)); => 50
+ */
 function map(value, start1, stop1, start2, stop2) {
     if (
         typeof value == "number" &&
@@ -20,10 +33,22 @@ function map(value, start1, stop1, start2, stop2) {
     }
 }
 
-// Returns a number between 0 and 1
-// Returns a random number between min and max
-// Returns a random number between 0 and max
-// Returns a random item from an array
+/**
+ * Returns a number between 0 and 1 (no parameters given)
+ *
+ * Returns a random number between min and max (both parameters gieven)
+ *
+ * Returns a random number between 0 and max (single parameter given)
+ *
+ * @method  random
+ * @param   {Number | Array}    [input1]    The value to map
+ * @param   {Number}            [input2]    Start of the input range
+ * @returns {*}                             Random item or number based on parameters
+ * @example
+ *  console.log(random()); => 0.3557
+ *  console.log(random(15)); => 10.89083
+ *  console.log(random(["Apple", "Orange", "Banana"])); => Orange
+ */
 function random(input1 = 0, input2 = 0) {
     if (input1 == 0 && input2 == 0) {
         return Math.random();
@@ -52,7 +77,30 @@ function lerp(end, start, t) {
     return start * (1 - t) + end * t;
 }
 
+// makes the code wait for ms amount of miliseconds
+function sleep(ms) {
+    let now = Date().now();
+    let currentDate = null;
+    do {
+        currentDate = Date.now();
+    } while (currentDate - now != ms);
+}
+
+//-------------------------------------------//
+//-------------- Math Functions -------------//
+//-------------------------------------------//
+
+function sigmoid(x) {
+    return 1 / (1 + Math.exp(-x));
+}
+
+function relu(x) {
+    return x < 0 ? 0 : x;
+}
+
+//-------------------------------------------//
 //----------------- Vectors -----------------//
+//-------------------------------------------//
 
 class Vector {
     constructor(_x, _y) {
@@ -162,3 +210,165 @@ class Vector {
         return [this.x, this.y];
     }
 }
+
+//-------------------------------------------//
+//----------------- Matrices ----------------//
+//-------------------------------------------//
+
+class Matrix {
+    constructor(_rows, _cols, _data = []) {
+        this.rows = _rows;
+        this.cols = _cols;
+        this.data = _data;
+
+        if (_data.length == 0 || _data == null) {
+            for (let i = 0; i < this.rows; i++) {
+                this.data[i] = [];
+                for (let j = 0; j < this.cols; j++) {
+                    this.data[i][j] = 0;
+                }
+            }
+        } else if (_data.length != this.rows || _data[0].length != this.cols) {
+            console.error("Invalid data size");
+        }
+    }
+    randomize(min, max, floor) {
+        for (let i = 0; i < this.rows; i++) {
+            this.data[i] = [];
+            for (let j = 0; j < this.cols; j++) {
+                if (floor) {
+                    this.data[i][j] = Math.floor(random(min, max));
+                } else {
+                    this.data[i][j] = random(min, max);
+                }
+            }
+        }
+    }
+    add(input) {
+        for (let i = 0; i < this.rows; i++) {
+            for (let j = 0; j < this.cols; j++) {
+                if (input instanceof Matrix) {
+                    this.data[i][j] += input.data[i][j];
+                } else if (typeof input == "number") {
+                    this.data[i][j] += input;
+                }
+            }
+        }
+    }
+    static add(mat1, mat2) {
+        let newMat = new Matrix(mat1.rows, mat1.cols);
+        for (let i = 0; i < newMat.rows; i++) {
+            for (let j = 0; j < newMat.cols; j++) {
+                if (mat2 instanceof Matrix) {
+                    newMat.data[i][j] = mat1.data[i][j] + mat2.data[i][j];
+                } else if (typeof mat2 == "number") {
+                    newMat.data[i][j] = mat1.data[i][j] + mat2;
+                }
+            }
+        }
+        return newMat;
+    }
+    subtract(input) {
+        let sub = null;
+        if (input instanceof Matrix) {
+            sub = Matrix.multiply(input, -1);
+        } else {
+            sub = -input;
+        }
+        this.add(sub);
+    }
+    static subtract(mat1, mat2) {
+        let sub = null;
+        if (mat2 instanceof Matrix) {
+            sub = Matrix.multiply(mat2, -1);
+        } else {
+            sub = -mat2;
+        }
+        return Matrix.add(mat1, sub);
+    }
+    multiply(input) {
+        for (let i = 0; i < this.rows; i++) {
+            for (let j = 0; j < this.cols; j++) {
+                if (input instanceof Matrix) {
+                    this.data[i][j] *= input.data[i][j];
+                } else if (typeof input == "number") {
+                    this.data[i][j] *= input;
+                }
+            }
+        }
+    }
+    static multiply(mat1, mat2) {
+        let newMat = new Matrix(mat1.rows, mat1.cols);
+        for (let i = 0; i < newMat.rows; i++) {
+            for (let j = 0; j < newMat.cols; j++) {
+                if (mat2 instanceof Matrix) {
+                    newMat.data[i][j] = mat1.data[i][j] * mat2.data[i][j];
+                } else if (typeof mat2 == "number") {
+                    newMat.data[i][j] = mat1.data[i][j] * mat2;
+                }
+            }
+        }
+        return newMat;
+    }
+    static matMultiply(mat1, mat2) {
+        if (mat1.cols == mat2.rows) {
+            let newMat = new Matrix(mat1.rows, mat2.cols);
+            for (let i = 0; i < newMat.rows; i++) {
+                for (let j = 0; j < newMat.cols; j++) {
+                    let sum = 0;
+                    for (let k = 0; k < mat1.cols; k++) {
+                        sum += mat1.data[i][k] * mat2.data[k][j];
+                    }
+                    newMat.data[i][j] = sum;
+                }
+            }
+            return newMat;
+        } else {
+            console.error(
+                "Coloms of the input must equal to the caller matrixes rows"
+            );
+        }
+    }
+    map(fn) {
+        for (let i = 0; i < this.rows; i++) {
+            for (let j = 0; j < this.cols; j++) {
+                let val = this.data[i][j];
+                this.data[i][j] = fn(val);
+            }
+        }
+    }
+    static map(mat, fn) {
+        let newMat = new Matrix(mat.rows, mat.cols);
+        for (let i = 0; i < mat.rows; i++) {
+            for (let j = 0; j < mat.cols; j++) {
+                let val = mat.data[i][j];
+                newMat.data[i][j] = fn(val);
+            }
+        }
+        return newMat;
+    }
+    static transpose(mat) {
+        let newMat = new Matrix(mat.cols, mat.rows);
+        for (let i = 0; i < mat.rows; i++) {
+            for (let j = 0; j < mat.cols; j++) {
+                newMat.data[j][i] = mat.data[i][j];
+            }
+        }
+        return newMat;
+    }
+    print() {
+        console.table(this.data);
+    }
+}
+
+m = new Matrix(2, 4, [
+    [1, -5, 3, 6],
+    [6, 4, 2, 5]
+]);
+m1 = new Matrix(2, 4, [
+    [4, 2, 5, 2],
+    [1, 8, 7, 3]
+]);
+console.table(m.data);
+m2 = Matrix.map(m, relu);
+console.table(m2.data);
